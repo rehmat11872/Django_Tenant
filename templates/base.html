@@ -99,7 +99,15 @@
 <body class="{% block class %}{% endblock %}">
 	
    {% include 'includes/messages.html' %}
-   {% include 'includes/header.html' %}
+
+   {% load header %}
+
+   {% header_view request %}
+
+
+
+
+   <!-- {% include 'includes/header.html' %} -->
 
    {% block layout %}
    {% endblock %}

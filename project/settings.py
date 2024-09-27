@@ -23,16 +23,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-rq!@fn)*4=_!$g-@x!xn0snaz=i@o6xy-e+*d)c6tv-5gmjq!='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+
+ALLOWED_HOSTS = []
+
 
 CSRF_TRUSTED_ORIGINS = [ 'https://*' ]
 
 
 # Application definition
-
-INSTALLED_APPS = [
+# INSTALLED_APPS
+SHARED_APPS = [
+    'django_tenants',
+    'tenant_manager',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,11 +49,31 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'django_cleanup.apps.CleanupConfig',
     "django_htmx",
+    'colorfield',
     'core',
     'users',
 ]
 
+TENANT_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'core',
+    'users',
+    ]
+
+INSTALLED_APPS = SHARED_APPS + [
+        app for app in TENANT_APPS if app not in SHARED_APPS
+    ]
+
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,6 +93,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 ROOT_URLCONF = 'project.urls'
+PUBLIC_SCHEMA_URLCONF = 'project.urls_public'
+
 
 TEMPLATES = [
     {
@@ -85,6 +112,16 @@ TEMPLATES = [
     },
 ]
 
+STORAGES = {
+    'default': {
+        # "BACKEND": "django_tenants.files.storage.TenantFileSystemStorage"
+         "BACKEND": "core.storage.CustomSchemaStorage"
+    },
+    'staticfiles': {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+    },
+}
+
 WSGI_APPLICATION = 'project.wsgi.application'
 
 
@@ -93,10 +130,24 @@ WSGI_APPLICATION = 'project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django_tenants.postgresql_backend',
+        'NAME': 'postgres_tenant',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'localhost',
+        'PORT': 5432
     }
 }
+
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
+
+TENANT_MODEL = "tenant_manager.Tenant" # app.Model
+TENANT_DOMAIN_MODEL = "tenant_manager.Domain"  # app.Model
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
+
 
 
 # Password validation
@@ -139,6 +190,7 @@ STATICFILES_DIRS = [BASE_DIR/ 'static']
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+MULTITENET_RELATIVE_MEDIA_ROOT = "tenants/%s"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

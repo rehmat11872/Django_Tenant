@@ -1,0 +1,7 @@
+python manage.py create_tenant
+#First_tenant 
+schema name: javacourse
+name: Java Course
+domain: javacourse.localhost
+#SuperUser for this First_tenant 
+python manage.py create_tenant_superuser
